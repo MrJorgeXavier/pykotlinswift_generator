@@ -1,48 +1,76 @@
 #!/usr/bin/env python3
 
+import os
 from kotlinswift_const_creator import convertToKotlinFile, convertToSwiftFile
+import sys
 
 className = "PredefinedEvents"
 
-def exportFile(workingDirectory, eventsFilePath, classContent):
+def exportFile(eventsFilePath, classContent):
     open(eventsFilePath, "w").write(classContent)
 
 
-def exportAndroid(eventsJson, androidProjectWorkingDirectory, androidProjectEventsFilePath):    
+def exportAndroid(eventsJson, androidProjectEventsFilePath):    
     kotlinFile = convertToKotlinFile(eventsJson, className)
 
     # Inserting kotlin class package definition
     kotlinFile = "package com.zoom.zoomtracker.analytics.model\n\n%s" % kotlinFile
 
     exportFile(
-        workingDirectory= androidProjectWorkingDirectory,
         eventsFilePath= androidProjectEventsFilePath,
         classContent= kotlinFile
     )
 
-def exportIOS(eventsJson, iOSProjectWorkingDirectory, iOSProjectEventsFilePath):            
+def exportIOS(eventsJson, iOSProjectEventsFilePath):            
     swiftFile = convertToSwiftFile(eventsJson, className)
 
     exportFile(
-        workingDirectory= iOSProjectWorkingDirectory,
         eventsFilePath= iOSProjectEventsFilePath,
         classContent= swiftFile
     )
 
 
-if __name__ == '__main__':
+def export(args):
+    if (len(args) == 0):
+        raise(Exception("Missing arguments json, iosfile and androidfile using the pattern <param>=<value> (Separating param name and value with an '=' without spaces.)"))        
 
-    eventsJson = open("mobile_events.json").read()
+    def getPathArgument(key):
+        for arg in args:
+            keyValue = arg.split("=")
+            if (keyValue[0] == key):
+                value = keyValue[1]
+                if (os.path.exists(value)):
+                    return value
+                else:
+                    raise(Exception("Param %s does not contain a valid file path" % key))
+        return None                        
+    
+    jsonFilePath = getPathArgument("json")
+    if (jsonFilePath == None):
+        raise(Exception("Missing param 'json', please inform the json file containing the events to generate the code."))
+
+    iosFilePath = getPathArgument("iosfile")
+    if (iosFilePath == None):
+        raise(Exception("Missing param 'iosfile', please inform the swift file to output the generated code."))
+
+    androidFilePath = getPathArgument("androidfile")
+    if (androidFilePath == None):
+        raise(Exception("Missing param 'androidfile', please inform the kotlin file to output the generated code."))
+
+    eventsJson = open(jsonFilePath).read()
 
     exportIOS(
         eventsJson= eventsJson,
-        iOSProjectWorkingDirectory = "../../ios/app-ios/",
-        iOSProjectEventsFilePath = "../../ios/app-ios/Zoom/Zoom App/Zoom/PredefinedEvents.swift"
+        iOSProjectEventsFilePath = iosFilePath
     )
 
     exportAndroid(
         eventsJson= eventsJson,
-        androidProjectWorkingDirectory = "../../android/app-android/",
-        androidProjectEventsFilePath = "../../android/app-android/ZoomAndroid/libraries/zoomtracker/src/main/java/com/zoom/zoomtracker/analytics/model/PredefinedEvents.kt"
+        androidProjectEventsFilePath = androidFilePath
     )
+
+if __name__ == '__main__':
+    args = sys.argv[1:]
+    export(args)
+    
     

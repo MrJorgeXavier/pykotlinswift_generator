@@ -1,7 +1,0 @@
-{
-    "tabBarInteraction": "tab_bar_click_%d{numberOfClicks}_times",
-    "ProdEvents": {
-        "screenView": "product",
-        "offerClick": "offer_cell_click"
-    }
-}
