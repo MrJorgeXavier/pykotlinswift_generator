@@ -1,19 +1,8 @@
 {
-    "atributo1": "valor 1",
-    "atributo2": "valor 2",
-    "atributo3": {
-        "propriedade1": "valor1",
-        "propriedade2": 42,
-        "propriedade3": 29.213
-    },
-    "atributo4": {
-        "propriedade1": "valor1",
-        "propriedade2": 42,
-        "propriedade3": 29.213
-    },
-    "atributo5": {
-        "propriedade1": "valor1",
-        "propriedade2": 42,
-        "propriedade3": 29.213
+    "eventoUm" : "valor-do-evento",
+    "eventoDois": "valor-%f{parametroAleatorio1}-dinamico-%d{param2}-de-evento-%s{paramDeTeste3}-%s",
+    "GrupoDeEventos": {
+        "eventoA" : "teste-teste",
+        "eventoB": "abcde_%d_asdasd"
     }
 }

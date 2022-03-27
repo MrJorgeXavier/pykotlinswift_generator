@@ -33,7 +33,7 @@ class CodeClass:
         methodArguments = ""
         methodReturnValue = ""
 
-        splitValues = re.split("(%[sfd][^\{])|(%[sfd]{[^}]+})", value)
+        splitValues = re.split("(%[sfd][^\{])|(%[sfd]$)|(%[sfd]{[^}]+})", value)
         
         for splitValue in splitValues:            
             if (splitValue == None or splitValue == ''): 
@@ -47,7 +47,7 @@ class CodeClass:
                 if ("d" in typeChar):
                     paramType = "Int"
                 elif ("f" in typeChar):
-                    paramType = "%%Float"
+                    paramType = "Float"
                 elif ("s" in typeChar):
                     paramType = "String"
 
@@ -71,8 +71,8 @@ class CodeClass:
                 if (paramHasName):
                     methodReturnValue = "%s%s" % (methodReturnValue, self.createStringInterpolatedValue(paramName))
                 else:
-                    paramName = splitValue.replace("%s%s" % ("%", typeChar), "$%s" % (paramName))
-                    methodReturnValue = "%s%s" % (methodReturnValue, self.createStringInterpolatedValue(paramName))
+                    paramName = splitValue.replace(typeChar, "%s" % self.createStringInterpolatedValue(paramName))
+                    methodReturnValue = "%s%s" % (methodReturnValue, paramName)
                 
                 continue
             
@@ -87,7 +87,8 @@ class CodeClass:
             value = properties[key]
             if (isinstance(value, str)):
                 if "%" in value:
-                    self.methodProperties.append(self.createMethodDefinition(key, value))
+                    methodLines = self.createMethodDefinition(key, value)
+                    self.methodProperties.append(methodLines)
                 else:
                     self.attributeLines.append(("%s %s = \"%s\"" % (self.constKeyword, key, value)))
             elif (isinstance(value, float)):
@@ -124,7 +125,10 @@ class CodeClass:
             writeLine("", self.indentationLevel)
         
         for method in self.methodProperties:
-            writeLine(method, self.indentationLevel + 1)
+            writeLine(method[0], self.indentationLevel + 1)
+            for line in range(1, len(method) - 1):
+                writeLine(method[line], self.indentationLevel + 2)
+            writeLine(method[-1], self.indentationLevel + 1)
 
         if (len(self.innerClasses) > 0):
             writeLine("", self.indentationLevel)
@@ -158,7 +162,11 @@ class KotlinClass(CodeClass):
 
     def createMethodDefinition(self, name, value):
         methodProps = super().createMethodDefinition(name, value)
-        return "fun %s(%s): String { return \"%s\" }" % (methodProps[0], methodProps[1], methodProps[2])
+        return [
+            "fun %s(%s): String {" % (methodProps[0], methodProps[1]),
+            "return \"%s\"" % (methodProps[2]),
+            "}"
+        ]
     
 
 class SwiftClass(CodeClass):    
@@ -180,7 +188,11 @@ class SwiftClass(CodeClass):
         
     def createMethodDefinition(self, name, value):
         methodProps = super().createMethodDefinition(name, value)
-        return "static func %s(%s) -> String { return \"%s\" }" % (methodProps[0], methodProps[1], methodProps[2])
+        return [
+            "static func %s(%s) -> String {" % (methodProps[0], methodProps[1]),
+            "return \"%s\"" % (methodProps[2]),
+            "}"
+        ]
 
 
 ## 
@@ -223,19 +235,21 @@ def convertToKotlinFile(templateFileJson, className):
     return "invalid json"
 
 if __name__ == '__main__':        
-    args = sys.argv[1:]
+    print(SwiftClass().createMethodDefinition("metodo", "valor-%s"))
+
+    # args = sys.argv[1:]
     
-    templateFilePath = "_temp/template.json"
+    # templateFilePath = "_temp/template.json"
     
-    if (len(args) != 0):
-        templateFilePath = args[0]
+    # if (len(args) != 0):
+    #     templateFilePath = args[0]
 
-    templateFileJson = open(templateFilePath).read()
+    # templateFileJson = open(templateFilePath).read()
     
-    swiftFile = convertToSwiftFile(templateFileJson, "Events")
+    # swiftFile = convertToSwiftFile(templateFileJson, "Events")
 
-    print(swiftFile)
+    # print(swiftFile)
 
-    kotlinFile = convertToKotlinFile(templateFileJson, "Events")
+    # kotlinFile = convertToKotlinFile(templateFileJson, "Events")
 
-    print(kotlinFile)
+    # print(kotlinFile)
