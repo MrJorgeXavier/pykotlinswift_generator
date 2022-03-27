@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 
 from kotlinswift_const_creator import convertToKotlinFile, convertToSwiftFile
-import os
-import shutil
-import subprocess
 
 className = "PredefinedEvents"
 
@@ -34,7 +31,6 @@ def exportIOS(eventsJson, iOSProjectWorkingDirectory, iOSProjectEventsFilePath):
 
 
 if __name__ == '__main__':
-    currentPath = os.getcwd()
 
     eventsJson = open("mobile_events.json").read()
 
@@ -44,14 +40,9 @@ if __name__ == '__main__':
         iOSProjectEventsFilePath = "../../ios/app-ios/Zoom/Zoom App/Zoom/PredefinedEvents.swift"
     )
 
-    os.chdir(currentPath)    
-
     exportAndroid(
         eventsJson= eventsJson,
         androidProjectWorkingDirectory = "../../android/app-android/",
         androidProjectEventsFilePath = "../../android/app-android/ZoomAndroid/libraries/zoomtracker/src/main/java/com/zoom/zoomtracker/analytics/model/PredefinedEvents.kt"
     )
-
-    os.chdir(currentPath)
-
     

@@ -94,6 +94,8 @@ class CodeClass:
                 self.attributeLines.append(("%s %s = %.2f" % (self.constKeyword, key, value)))
             elif (isinstance(value, int)):
                 self.attributeLines.append(("%s %s = %d" % (self.constKeyword, key, value)))
+            elif (isinstance(value, list)):
+                raise(Exception("Arrays are not supported! Use only strings, floats, ints and objects."))
             elif (isinstance(value, object)):
                 innerClass = self.createInnerClass()
                 innerClass.name = key
