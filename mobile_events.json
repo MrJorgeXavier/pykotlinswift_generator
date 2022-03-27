@@ -1,0 +1,13 @@
+{
+    "className": "Events",
+    "classProperties": {
+        "tabBarInteraction": "tab_bar_click_%d",
+        "prod": {
+            "className": "ProdScreenEvents",
+            "classProperties": {
+                "screenView": "product",
+                "offerClick": "offer_cell_click"
+            }
+        }
+    }
+}

@@ -1,0 +1,31 @@
+{
+    "className": "TemplateClass",
+    "classProperties": {
+        "atributo1": "valor 1",
+        "atributo2": "valor 2",
+        "atributo3": {
+            "className": "ProriedadeClass",
+            "classProperties": {
+                "propriedade1": "valor1",
+                "propriedade2": 42,
+                "propriedade3": 29.213
+            }
+        },
+        "atributo4": {
+            "className": "ProriedadeClassDois",
+            "classProperties": {
+                "propriedade1": "valor1",
+                "propriedade2": 42,
+                "propriedade3": 29.213
+            }
+        },
+        "atributo5": {
+            "className": "ProriedadeClassTres",
+            "classProperties": {
+                "propriedade1": "valor1",
+                "propriedade2": 42,
+                "propriedade3": 29.213
+            }
+        }
+    }
+}
