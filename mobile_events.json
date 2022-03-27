@@ -1,7 +1,7 @@
 {
     "className": "Events",
     "classProperties": {
-        "tabBarInteraction": "tab_bar_click_%d",
+        "tabBarInteraction": "tab_bar_click_%d{numberOfClicks}_times",
         "prod": {
             "className": "ProdScreenEvents",
             "classProperties": {

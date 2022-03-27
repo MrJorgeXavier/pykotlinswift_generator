@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
+from asyncore import write
 import sys
 import json
+import re
 
 ## 
 ## PARSING DICTIONARY TO LANGUAGE INSTRUCTIONS LOGIC:
@@ -14,6 +16,7 @@ class CodeClass:
         self.indentationLevel = 0
         self.name = "Unknown"
         self.innerClasses = []
+        self.methodProperties = []
         self.attributeLines = []
 
     def createInnerClass(self):
@@ -21,7 +24,62 @@ class CodeClass:
 
     def createClassDefinition(self):
         return None
+
+    def createStringInterpolatedValue(self, value):
+        return None
+    
+    def createMethodDefinition(self, name, value):
+        paramCount = 1
+        methodArguments = ""
+        methodReturnValue = ""
+
+        splitValues = re.split("(%[sfd][^\{])|(%[sfd]{[^}]+})", value)
+        
+        for splitValue in splitValues:            
+            if (splitValue == None or splitValue == ''): 
+                continue
             
+            if ("%" in splitValue):
+                # Define type of param
+                typeChar = re.findall("%.", splitValue)[0]
+                
+                paramType = ""
+                if ("d" in typeChar):
+                    paramType = "Int"
+                elif ("f" in typeChar):
+                    paramType = "%%Float"
+                elif ("s" in typeChar):
+                    paramType = "String"
+
+                # Define name of param
+                paramHasName = "{" in splitValue
+                paramName = ""
+                if (paramHasName):
+                    paramName = re.findall("\{(.*)\}", splitValue)[0]
+                else:
+                    paramName = "a%d" % paramCount                
+                
+                paramCount += 1
+                
+                # Write arguments
+                if (len(methodArguments) > 0):
+                    methodArguments = "%s, " % (methodArguments)
+
+                methodArguments = "%s%s: %s" % (methodArguments, paramName, paramType)
+
+                # Write return value
+                if (paramHasName):
+                    methodReturnValue = "%s%s" % (methodReturnValue, self.createStringInterpolatedValue(paramName))
+                else:
+                    paramName = splitValue.replace("%s%s" % ("%", typeChar), "$%s" % (paramName))
+                    methodReturnValue = "%s%s" % (methodReturnValue, self.createStringInterpolatedValue(paramName))
+                
+                continue
+            
+            methodReturnValue = "%s%s" % (methodReturnValue, splitValue)
+
+        return (name, methodArguments, methodReturnValue)
+
     def parseClassObject(self, jsonObject):
         self.name = jsonObject["className"]
         properties = jsonObject["classProperties"]
@@ -29,7 +87,10 @@ class CodeClass:
         for key in properties:
             value = properties[key]
             if (isinstance(value, str)):
-                self.attributeLines.append(("%s %s = \"%s\"" % (self.constKeyword, key, value)))
+                if "%" in value:
+                    self.methodProperties.append(self.createMethodDefinition(key, value))
+                else:
+                    self.attributeLines.append(("%s %s = \"%s\"" % (self.constKeyword, key, value)))
             elif (isinstance(value, float)):
                 self.attributeLines.append(("%s %s = %.2f" % (self.constKeyword, key, value)))
             elif (isinstance(value, int)):
@@ -57,6 +118,12 @@ class CodeClass:
         for attributeLine in self.attributeLines:
             writeLine(attributeLine, self.indentationLevel + 1)
 
+        if (len(self.methodProperties) > 0):
+            writeLine("", self.indentationLevel)
+        
+        for method in self.methodProperties:
+            writeLine(method, self.indentationLevel + 1)
+
         if (len(self.innerClasses) > 0):
             writeLine("", self.indentationLevel)
             writeLine("", self.indentationLevel)
@@ -83,6 +150,13 @@ class KotlinClass(CodeClass):
 
     def createClassDefinition(self):        
         return "object %s {" % self.name
+
+    def createStringInterpolatedValue(self, value):
+        return "${%s}" % value
+
+    def createMethodDefinition(self, name, value):
+        methodProps = super().createMethodDefinition(name, value)
+        return "fun %s(%s): String { return \"%s\" }" % (methodProps[0], methodProps[1], methodProps[2])
     
 
 class SwiftClass(CodeClass):    
@@ -98,6 +172,13 @@ class SwiftClass(CodeClass):
 
     def createClassDefinition(self):        
         return "struct %s {\n%sprivate init() {}\n" % (self.name, self.indentation(self.indentationLevel + 1))
+
+    def createStringInterpolatedValue(self, value):
+        return "\\(%s)" % value
+        
+    def createMethodDefinition(self, name, value):
+        methodProps = super().createMethodDefinition(name, value)
+        return "static func %s(%s) -> String { return \"%s\" }" % (methodProps[0], methodProps[1], methodProps[2])
 
 
 ## 
@@ -137,20 +218,21 @@ def convertToKotlinFile(templateFileJson):
 
     return "invalid json"
 
-if __name__ == '__main__':
-    args = sys.argv[1:]
+if __name__ == '__main__':    
+    print(SwiftClass().createMethodDefinition("nomeDoMetodo", "tab_bar_click_%d{numberOfClicks}_times"))
+    # args = sys.argv[1:]
     
-    templateFilePath = "_temp/template.json"
+    # templateFilePath = "_temp/template.json"
     
-    if (len(args) != 0):
-        templateFilePath = args[0]
+    # if (len(args) != 0):
+    #     templateFilePath = args[0]
 
-    templateFileJson = open(templateFilePath).read()
+    # templateFileJson = open(templateFilePath).read()
     
-    swiftFile = convertToSwiftFile(templateFileJson)
+    # swiftFile = convertToSwiftFile(templateFileJson)
 
-    print(swiftFile)
+    # print(swiftFile)
 
-    kotlinFile = convertToKotlinFile(templateFileJson)
+    # kotlinFile = convertToKotlinFile(templateFileJson)
 
-    print(kotlinFile)
+    # print(kotlinFile)
