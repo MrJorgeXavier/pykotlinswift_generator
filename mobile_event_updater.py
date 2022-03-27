@@ -5,12 +5,14 @@ import os
 import shutil
 import subprocess
 
+className = "PredefinedEvents"
+
 def exportFile(workingDirectory, eventsFilePath, classContent):
     open(eventsFilePath, "w").write(classContent)
 
 
 def exportAndroid(eventsJson, androidProjectWorkingDirectory, androidProjectEventsFilePath):    
-    kotlinFile = convertToKotlinFile(eventsJson)
+    kotlinFile = convertToKotlinFile(eventsJson, className)
 
     # Inserting kotlin class package definition
     kotlinFile = "package com.zoom.zoomtracker.analytics.model\n\n%s" % kotlinFile
@@ -22,7 +24,7 @@ def exportAndroid(eventsJson, androidProjectWorkingDirectory, androidProjectEven
     )
 
 def exportIOS(eventsJson, iOSProjectWorkingDirectory, iOSProjectEventsFilePath):            
-    swiftFile = convertToSwiftFile(eventsJson)
+    swiftFile = convertToSwiftFile(eventsJson, className)
 
     exportFile(
         workingDirectory= iOSProjectWorkingDirectory,
