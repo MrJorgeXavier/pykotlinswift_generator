@@ -17,7 +17,10 @@ class CodeClass:
         self.attributeLines = []
 
     def createInnerClass(self):
-        return 0
+        return None
+
+    def createClassDefinition(self):
+        return None
             
     def parseClassObject(self, jsonObject):
         self.name = jsonObject["className"]
@@ -36,21 +39,20 @@ class CodeClass:
                 innerClass.indentationLevel = self.indentationLevel + 1
                 innerClass.parseClassObject(value)
                 self.innerClasses.append(innerClass)
-                self.attributeLines.append(("%s %s = %s()" % (self.constKeyword, key, innerClass.name)))
-    
-    def generateClassDefinitionLines(self):
-        lines = []
 
-        def indentation(level):
+    def indentation(self, level):
             ident = ""
             for i in range(0,level):
                 ident = "%s%s" % (ident, self.indentationCharacter)
             return ident
-
+    
+    def generateClassDefinitionLines(self):
+        lines = []
+        
         def writeLine(line, level):
-            lines.append("%s%s" % (indentation(level), line))
+            lines.append("%s%s" % (self.indentation(level), line))
 
-        writeLine("class %s {" % self.name, self.indentationLevel)
+        writeLine(self.createClassDefinition(), self.indentationLevel)
         
         for attributeLine in self.attributeLines:
             writeLine(attributeLine, self.indentationLevel + 1)
@@ -73,11 +75,14 @@ class KotlinClass(CodeClass):
         super().__init__(
             indentationCharacter="    ",
             language= "Kotlin",
-            constKeyword= "val"
+            constKeyword= "const val"
         )
     
     def createInnerClass(self):
         return KotlinClass()
+
+    def createClassDefinition(self):        
+        return "object %s {" % self.name
     
 
 class SwiftClass(CodeClass):    
@@ -85,11 +90,14 @@ class SwiftClass(CodeClass):
         super().__init__(
             indentationCharacter="    ",
             language= "Swift",
-            constKeyword= "let"
+            constKeyword= "static let"
         )
     
     def createInnerClass(self):
         return SwiftClass()
+
+    def createClassDefinition(self):        
+        return "struct %s {\n%sprivate init() {}\n" % (self.name, self.indentation(self.indentationLevel + 1))
 
 
 ## 
