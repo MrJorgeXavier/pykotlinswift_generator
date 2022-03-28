@@ -244,21 +244,3 @@ def convertToKotlinFile(templateFileJson, className):
         return generateStringFromCodeClass(kotlinClass)
 
     return "invalid json"
-
-if __name__ == '__main__':        
-    args = sys.argv[1:]
-    
-    templateFilePath = "_temp/template.json"
-    
-    if (len(args) != 0):
-        templateFilePath = args[0]
-
-    templateFileJson = open(templateFilePath).read()
-    
-    swiftFile = convertToSwiftFile(templateFileJson, "Events")
-
-    print(swiftFile)
-
-    kotlinFile = convertToKotlinFile(templateFileJson, "Events")
-
-    print(kotlinFile)

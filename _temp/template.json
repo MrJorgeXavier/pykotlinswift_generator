@@ -1,8 +1,0 @@
-{
-    "eventoUm" : "valor-do-evento",
-    "eventoDois": "valor-%f{parametroAleatorio1}-dinamico-%d{param2}-de-evento-%s{paramDeTeste3}-%s",
-    "GrupoDeEventos": {
-        "eventoA" : "teste-teste",
-        "eventoB": "abcde_%d_asdasd"
-    }
-}
