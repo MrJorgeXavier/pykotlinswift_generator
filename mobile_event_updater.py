@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
 import os
+from pydoc import classname
 from kotlinswift_const_creator import convertToKotlinFile, convertToSwiftFile
 import sys
 
-className = "PredefinedEvents"
 
 def exportFile(eventsFilePath, classContent):
     open(eventsFilePath, "w").write(classContent)
 
 
-def exportAndroid(eventsJson, androidProjectEventsFilePath):    
+def exportAndroid(eventsJson, androidProjectEventsFilePath, className):    
     kotlinFile = convertToKotlinFile(eventsJson, className)
 
     # Inserting kotlin class package definition
@@ -21,7 +21,7 @@ def exportAndroid(eventsJson, androidProjectEventsFilePath):
         classContent= kotlinFile
     )
 
-def exportIOS(eventsJson, iOSProjectEventsFilePath):            
+def exportIOS(eventsJson, iOSProjectEventsFilePath, className):            
     swiftFile = convertToSwiftFile(eventsJson, className)
 
     exportFile(
@@ -32,18 +32,27 @@ def exportIOS(eventsJson, iOSProjectEventsFilePath):
 
 def export(args):
     if (len(args) == 0):
-        raise(Exception("Missing arguments json, iosfile and androidfile using the pattern <param>=<value> (Separating param name and value with an '=' without spaces.)"))        
+        raise(Exception("Missing arguments classname, json, iosfile and androidfile using the pattern <param>=<value> (Separating param name and value with an '=' without spaces.)"))        
 
-    def getPathArgument(key):
+    def getArgument(key):
         for arg in args:
             keyValue = arg.split("=")
             if (keyValue[0] == key):
                 value = keyValue[1]
-                if (os.path.exists(value)):
+                if (value != None and len(value) > 0):
                     return value
-                else:
-                    raise(Exception("Param %s does not contain a valid file path" % key))
         return None                        
+
+    def getPathArgument(key):
+        value = getArgument(key)
+        
+        if (value == None):
+            return None
+
+        if (os.path.exists(value)):
+            return value
+        
+        raise(Exception("Param %s does not contain a valid file path" % key))
     
     jsonFilePath = getPathArgument("json")
     if (jsonFilePath == None):
@@ -57,16 +66,23 @@ def export(args):
     if (androidFilePath == None):
         raise(Exception("Missing param 'androidfile', please inform the kotlin file to output the generated code."))
 
+    className = getArgument("classname")
+    if (className == None):
+        print("classname not specified, using 'HelloWorld' instead.")
+        className = "HelloWorld"
+
     eventsJson = open(jsonFilePath).read()
 
     exportIOS(
         eventsJson= eventsJson,
-        iOSProjectEventsFilePath = iosFilePath
+        iOSProjectEventsFilePath = iosFilePath,
+        className = className
     )
 
     exportAndroid(
         eventsJson= eventsJson,
-        androidProjectEventsFilePath = androidFilePath
+        androidProjectEventsFilePath = androidFilePath,
+        className = className
     )
 
 if __name__ == '__main__':

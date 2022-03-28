@@ -235,21 +235,19 @@ def convertToKotlinFile(templateFileJson, className):
     return "invalid json"
 
 if __name__ == '__main__':        
-    print(SwiftClass().createMethodDefinition("metodo", "valor-%s"))
-
-    # args = sys.argv[1:]
+    args = sys.argv[1:]
     
-    # templateFilePath = "_temp/template.json"
+    templateFilePath = "_temp/template.json"
     
-    # if (len(args) != 0):
-    #     templateFilePath = args[0]
+    if (len(args) != 0):
+        templateFilePath = args[0]
 
-    # templateFileJson = open(templateFilePath).read()
+    templateFileJson = open(templateFilePath).read()
     
-    # swiftFile = convertToSwiftFile(templateFileJson, "Events")
+    swiftFile = convertToSwiftFile(templateFileJson, "Events")
 
-    # print(swiftFile)
+    print(swiftFile)
 
-    # kotlinFile = convertToKotlinFile(templateFileJson, "Events")
+    kotlinFile = convertToKotlinFile(templateFileJson, "Events")
 
-    # print(kotlinFile)
+    print(kotlinFile)
