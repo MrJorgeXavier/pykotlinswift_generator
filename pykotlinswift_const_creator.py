@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-from asyncore import write
-import sys
 import json
 import re
 
