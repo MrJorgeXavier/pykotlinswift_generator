@@ -11,10 +11,7 @@ def exportFile(eventsFilePath, classContent):
 
 
 def exportAndroid(eventsJson, androidProjectEventsFilePath, className):    
-    kotlinFile = convertToKotlinFile(eventsJson, className)
-
-    # Inserting kotlin class package definition
-    kotlinFile = "package com.zoom.zoomtracker.analytics.model\n\n%s" % kotlinFile
+    kotlinFile = convertToKotlinFile(eventsJson, className) 
 
     exportFile(
         eventsFilePath= androidProjectEventsFilePath,
@@ -71,7 +68,9 @@ def export(args):
         print("classname not specified, using 'HelloWorld' instead.")
         className = "HelloWorld"
 
-    eventsJson = open(jsonFilePath).read()
+    eventsJsonFile = open(jsonFilePath)
+    eventsJson = eventsJsonFile.read()
+    eventsJsonFile.close()
 
     exportIOS(
         eventsJson= eventsJson,
