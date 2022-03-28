@@ -2,7 +2,7 @@
 
 import os
 from pydoc import classname
-from kotlinswift_const_creator import convertToKotlinFile, convertToSwiftFile
+from pykotlinswift_const_creator import convertToKotlinFile, convertToSwiftFile
 import sys
 
 
