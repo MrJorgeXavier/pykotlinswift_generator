@@ -1,3 +1,5 @@
 .DS_Store
-mosaico_events.py
-mosaico_events.json
+app_events.py
+**.json
+**.swift
+**.kotlin
