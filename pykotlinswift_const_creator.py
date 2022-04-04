@@ -16,6 +16,7 @@ class CodeClass:
         self.innerClasses = []
         self.methodProperties = []
         self.attributeLines = []
+        self.defaultParameters = {}
 
     def createInnerClass(self):
         return None
@@ -116,6 +117,11 @@ class CodeClass:
     def createEventMethodDefinition(self, methodName, eventName, eventParams):
         methodArguments = ""
         methodReturnValue = ""
+
+        for paramName in self.defaultParameters:
+            if (paramName in eventParams):
+                continue
+            eventParams[paramName] = self.defaultParameters[paramName]
         
         for paramName in eventParams:
             paramValue = eventParams[paramName]
@@ -168,8 +174,10 @@ class CodeClass:
                 self.attributeLines.append(("%s %s = %d" % (self.constKeyword, key, value)))
             elif (isinstance(value, list)):
                 raise(Exception("Arrays are not supported! Use only strings, floats, ints and objects."))
-            elif (isinstance(value, object)):                
-                if "_name" in value:
+            elif (isinstance(value, object)):
+                if (key == "_defaultParams"):
+                    self.defaultParameters = value                    
+                elif "_name" in value:
                     methodName = key
                     eventName = value["_name"]
                     eventParams = value["_params"]
