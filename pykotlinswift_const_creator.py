@@ -187,7 +187,7 @@ class CodeClass:
                     excludeParams = []
                     if ("_excludeParams" in value):
                         excludeParams = value["_excludeParams"]
-                        
+
                     eventMethodLines = self.createEventMethodDefinition(key, eventName, eventParams, excludeParams)
                     self.methodProperties.append(eventMethodLines)
                 else:  
@@ -224,7 +224,6 @@ class CodeClass:
             writeLine(method[-1], self.indentationLevel + 1)
 
         if (len(self.innerClasses) > 0):
-            writeLine("", self.indentationLevel)
             writeLine("", self.indentationLevel)
 
         for innerClass in self.innerClasses:
@@ -273,9 +272,41 @@ class KotlinClass(CodeClass):
         ]
 
     def createEventClassDefinition(self):
-        return [
-            "data class EventData(val name: String, val params: Map<String, Any>)"
-        ]
+        return """
+import java.text.Normalizer
+
+private val pyDiactricsRegex = "\\\\p{Mn}+".toRegex()
+private val pyNormalizationRegex = "[^\\\\w]".toRegex()
+
+fun String.pyNormalized(): String {
+    return Normalizer.normalize(this.lowercase(), Normalizer.Form.NFD)
+        .replace(pyDiactricsRegex, "")
+        .replace(pyNormalizationRegex, "_")
+        .split("_")
+        .filter({  s -> s.length > 0 })
+        .joinToString(separator = "_")
+}
+
+fun Map<String, Any>.pyNormalized(): Map<String, Any> {
+    var map = HashMap<String, Any>()
+    for ((key, value) in this) {
+        if (value is String) {
+            map.put(key.pyNormalized(), value.pyNormalized())
+        }
+        else {
+            map.put(key.pyNormalized(), value)
+        }
+    }
+    return map
+}
+
+data class EventData(private val rawName: String, private val rawParams: Map<String, Any>) {
+    val name = this.rawName.pyNormalized()
+    val params = this.rawParams.pyNormalized()
+    
+    override fun toString() = "EventData(name=${this.name}, params=${this.params})"
+}
+        """
 
     def createEventClassInstance(self, name, value):
         return "EventData(\"%s\", %s)" % (name, value)
@@ -290,14 +321,14 @@ class SwiftClass(CodeClass):
         super().__init__(
             indentationCharacter="    ",
             language= "Swift",
-            constKeyword= "static let"
+            constKeyword= "public static let"
         )
     
     def createInnerClass(self):
         return SwiftClass()
 
     def createClassDefinition(self):        
-        return "struct %s {\n%sprivate init() {}\n" % (self.name, self.indentation(self.indentationLevel + 1))
+        return "public struct %s {\n%sprivate init() {}\n" % (self.name, self.indentation(self.indentationLevel + 1))
 
     def createStringInterpolatedValue(self, value):
         return "\\(%s)" % value
@@ -310,7 +341,7 @@ class SwiftClass(CodeClass):
     def createMethodDefinition(self, name, value):
         methodProps = super().createMethodDefinition(name, value)
         return [
-            "static func %s(%s) -> String {" % (methodProps[0], methodProps[1]),
+            "public static func %s(%s) -> String {" % (methodProps[0], methodProps[1]),
             "return \"%s\"" % (methodProps[2]),
             "}"
         ]
@@ -318,18 +349,47 @@ class SwiftClass(CodeClass):
     def createEventMethodDefinition(self, methodName, eventName, eventParams, excludeParams):
         methodProps = super().createEventMethodDefinition(methodName, eventName, eventParams, excludeParams)
         return [
-            "static func %s(%s) -> EventData {" % (methodProps[0], methodProps[1]),
+            "public static func %s(%s) -> EventData {" % (methodProps[0], methodProps[1]),
             "return %s" % (methodProps[2]),
             "}"
         ]
 
     def createEventClassDefinition(self):
-        return [
-            "struct EventData {",
-            "%slet name: String" % self.indentationCharacter,
-            "%slet params: [String: Any]" % self.indentationCharacter,
-            "}"
-        ]
+        return  """
+import Foundation
+
+extension String {
+    func pyNormalized() -> String {
+        let simple = folding(options: [.diacriticInsensitive, .widthInsensitive, .caseInsensitive], locale: nil)
+        let nonAlphaNumeric = CharacterSet.alphanumerics.inverted
+        return simple.components(separatedBy: nonAlphaNumeric)
+            .joined(separator: "_")
+            .split(separator: "_")
+            .filter({ $0.count > 0 })
+            .joined(separator: "_")
+    }
+}
+
+extension Dictionary where Key == String, Value == Any {
+    func pyNormalized() -> [Key: Value] {
+        return self.reduce([:], { result, keyValue in
+            var r = result
+            r[keyValue.key.pyNormalized()] = ((keyValue.value as? String)?.pyNormalized()) ?? keyValue.value
+            return r
+        })
+    }
+}
+
+public struct EventData {
+    let name: String
+    let params: [String: Any]
+    
+    init(name: String, params: [String: Any]) {
+        self.name = name.pyNormalized()
+        self.params = params.pyNormalized()
+    }
+}
+        """
     
     def createEventClassInstance(self, name, value):
         return "EventData(name: \"%s\", params: %s)" % (name, value)
@@ -346,9 +406,7 @@ def generateStringFromCodeClass(codeClass):
         "// %s file generated by pykotlinswift script.\n\n" % codeClass.language        
     ]
 
-    fileLines += codeClass.createEventClassDefinition()
-
-    fileLines.append("\n\n")
+    fileLines.append(codeClass.createEventClassDefinition())
     
     lines = codeClass.generateClassDefinitionLines()
     for line in lines:
@@ -389,5 +447,5 @@ if __name__ == '__main__':
     eventsJsonFile = open(jsonFilePath)
     eventsJson = eventsJsonFile.read()
     eventsJsonFile.close()
-    print(convertToSwiftFile(eventsJson, "TemplateTest"))
-    print(convertToKotlinFile(eventsJson, "TemplateTest"))
+    print(convertToSwiftFile(eventsJson, "SampleClass"))
+    print(convertToKotlinFile(eventsJson, "SampleClass"))
