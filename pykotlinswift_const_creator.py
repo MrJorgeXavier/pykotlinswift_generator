@@ -114,7 +114,7 @@ class CodeClass:
         return params
 
 
-    def createEventMethodDefinition(self, methodName, eventName, eventParams):
+    def createEventMethodDefinition(self, methodName, eventName, eventParams, excludeParams):
         methodArguments = ""
         methodReturnValue = ""
 
@@ -123,6 +123,10 @@ class CodeClass:
                 continue
             eventParams[paramName] = self.defaultParameters[paramName]
         
+        for paramName in excludeParams:
+            if (paramName in eventParams):
+                del eventParams[paramName]
+
         for paramName in eventParams:
             paramValue = eventParams[paramName]
             paramType = ""
@@ -178,10 +182,13 @@ class CodeClass:
                 if (key == "_defaultParams"):
                     self.defaultParameters = value                    
                 elif "_name" in value:
-                    methodName = key
                     eventName = value["_name"]
                     eventParams = value["_params"]
-                    eventMethodLines = self.createEventMethodDefinition(methodName, eventName, eventParams)
+                    excludeParams = []
+                    if ("_excludeParams" in value):
+                        excludeParams = value["_excludeParams"]
+                        
+                    eventMethodLines = self.createEventMethodDefinition(key, eventName, eventParams, excludeParams)
                     self.methodProperties.append(eventMethodLines)
                 else:  
                     innerClass = self.createInnerClass()
@@ -257,8 +264,8 @@ class KotlinClass(CodeClass):
             "}"
         ]
     
-    def createEventMethodDefinition(self, methodName, eventName, eventParams):
-        methodProps = super().createEventMethodDefinition(methodName, eventName, eventParams)
+    def createEventMethodDefinition(self, methodName, eventName, eventParams, excludeParams):
+        methodProps = super().createEventMethodDefinition(methodName, eventName, eventParams, excludeParams)
         return [
             "fun %s(%s): EventData {" % (methodProps[0], methodProps[1]),
             "return %s" % (methodProps[2]),
@@ -308,8 +315,8 @@ class SwiftClass(CodeClass):
             "}"
         ]
     
-    def createEventMethodDefinition(self, methodName, eventName, eventParams):
-        methodProps = super().createEventMethodDefinition(methodName, eventName, eventParams)
+    def createEventMethodDefinition(self, methodName, eventName, eventParams, excludeParams):
+        methodProps = super().createEventMethodDefinition(methodName, eventName, eventParams, excludeParams)
         return [
             "static func %s(%s) -> EventData {" % (methodProps[0], methodProps[1]),
             "return %s" % (methodProps[2]),
