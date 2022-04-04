@@ -58,7 +58,7 @@ class CodeClass:
                 if ("d" in typeChar):
                     paramType = "Int"
                 elif ("f" in typeChar):
-                    paramType = "Float"
+                    paramType = "Double"
                 elif ("s" in typeChar):
                     paramType = "String"
 
@@ -128,7 +128,7 @@ class CodeClass:
                     if ("d" in typeChar):
                         paramType = "Int"
                     elif ("f" in typeChar):
-                        paramType = "Float"
+                        paramType = "Double"
                     elif ("s" in typeChar):
                         paramType = "String"
                     else:
