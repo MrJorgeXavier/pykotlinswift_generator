@@ -29,20 +29,46 @@ class CodeClass:
     def createParamName(self, name, type, userDefined):
         return None
 
-    def createMethodDefinition(self, name, value):
-        paramCount = 1
+    def createEventClassDefinition(self):
+        return None
+
+    def createMapDefinition(self, values):
+        return None
+
+    def createEventClassInstance(self, name, value):
+        return None
+
+    def createMapDefinition(self, values):
+        params = ""
+        for valueKey in values:
+            value = values[valueKey]
+            
+            if (len(params) > 0):
+                    params += ", "
+
+            if (isinstance(value, str)):
+                if ("%" in value):                
+                    params += "%s = %s" % (valueKey, self.createStringInterpolatedValue(valueKey))
+                else:
+                    params += "%s = \"%s\"" % (valueKey, value)
+            elif (isinstance(value, float)):
+                params += "%s %s = %.2f" % (self.constKeyword, valueKey, value)
+            elif (isinstance(value, int)):
+                params += "%s %s = %d" % (self.constKeyword, valueKey, value)            
+            elif (isinstance(value, list)):
+                raise(Exception("Arrays are not supported! Use only strings, floats, ints and objects."))            
+        return params
+
+    def createEventMethodDefinition(self, methodName, eventName, eventParams):
         methodArguments = ""
         methodReturnValue = ""
-
-        splitValues = re.split("(%[sfd][^\{])|(%[sfd]$)|(%[sfd]{[^}]+})", value)
         
-        for splitValue in splitValues:            
-            if (splitValue == None or splitValue == ''): 
-                continue
+        for paramName in eventParams:
+            paramValue = eventParams[paramName]
             
-            if ("%" in splitValue):
+            if ("%" in paramValue):
                 # Define type of param
-                typeChar = re.findall("%.", splitValue)[0]
+                typeChar = re.findall("%.", paramValue)[0]
                 
                 paramType = ""
                 if ("d" in typeChar):
@@ -51,35 +77,20 @@ class CodeClass:
                     paramType = "Float"
                 elif ("s" in typeChar):
                     paramType = "String"
-
-                # Define name of param
-                paramHasName = "{" in splitValue
-                paramName = ""
-                if (paramHasName):
-                    paramName = re.findall("\{(.*)\}", splitValue)[0]
-                else:
-                    paramName = "a%d" % paramCount                
-                
-                paramCount += 1
                 
                 # Write arguments
                 if (len(methodArguments) > 0):
                     methodArguments = "%s, " % (methodArguments)
 
-                methodArguments = "%s%s" % (methodArguments, self.createParamName(paramName, paramType, paramHasName))
-
-                # Write return value
-                if (paramHasName):
-                    methodReturnValue = "%s%s" % (methodReturnValue, self.createStringInterpolatedValue(paramName))
-                else:
-                    paramName = splitValue.replace(typeChar, "%s" % self.createStringInterpolatedValue(paramName))
-                    methodReturnValue = "%s%s" % (methodReturnValue, paramName)
-                
+                methodArguments = "%s%s" % (methodArguments, self.createParamName(paramName, paramType, True))                                
                 continue
-            
-            methodReturnValue = "%s%s" % (methodReturnValue, splitValue)
 
-        return (name, methodArguments, methodReturnValue)
+        # Write return value
+        mapParams = self.createMapDefinition(eventParams)
+        methodReturnValue = "return %s" % (self.createEventClassInstance(eventName, mapParams))
+
+        return (methodName, methodArguments, methodReturnValue)
+
 
     def parseClassObject(self, jsonObject):
         properties = jsonObject
@@ -99,11 +110,18 @@ class CodeClass:
             elif (isinstance(value, list)):
                 raise(Exception("Arrays are not supported! Use only strings, floats, ints and objects."))
             elif (isinstance(value, object)):
-                innerClass = self.createInnerClass()
-                innerClass.name = key
-                innerClass.indentationLevel = self.indentationLevel + 1
-                innerClass.parseClassObject(value)
-                self.innerClasses.append(innerClass)
+                if value["_name"] != None:
+                    methodName = key
+                    eventName = value["_name"]
+                    eventParams = value["_params"]
+                    eventMethodLines = self.createEventMethodDefinition(methodName, eventName, eventParams)
+                    self.methodProperties.append(eventMethodLines)
+                else:  
+                    innerClass = self.createInnerClass()
+                    innerClass.name = key
+                    innerClass.indentationLevel = self.indentationLevel + 1
+                    innerClass.parseClassObject(value)
+                    self.innerClasses.append(innerClass)
 
     def indentation(self, level):
             ident = ""
@@ -172,6 +190,18 @@ class KotlinClass(CodeClass):
             "}"
         ]
     
+    def createEventClassDefinition(self):
+        return [
+            "data class EventData(val name: String, val params: Map<String, Any>)"
+        ]
+
+    def createEventClassInstance(self, name, value):
+        return "EventData(%s, %s)" % (name, value)
+
+    def createMapDefinition(self, values):
+        mapValues = super().createMapDefinition(values)
+        return "mapOf(%s)" % (mapValues.replace("="," to "))
+                
 
 class SwiftClass(CodeClass):    
     def __init__(self):
@@ -203,12 +233,32 @@ class SwiftClass(CodeClass):
             "}"
         ]
 
+    def createEventClassDefinition(self):
+        return [
+            "struct EventData {"
+            "\tlet name: String",
+            "\tlet params: [String: Any]",
+            "}"
+        ]
+    
+    def createEventClassInstance(self, name, value):
+        return "EventData(name: %s, params: %s)" % (name, value)
+
+    def createMapDefinition(self, values):
+        mapValues = super().createMapDefinition(values)
+        return "mapOf(%s)" % (mapValues.replace("=",":"))
 
 ## 
 ## FILE GENERATION METHODS:
 ##
 def generateStringFromCodeClass(codeClass):
-    fileLines = ["// %s file generated by pykotlinswift script.\n" % codeClass.language]
+    fileLines = [
+        "// %s file generated by pykotlinswift script.\n\n" % codeClass.language        
+    ]
+
+    fileLines += codeClass.createEventClassDefinition()
+
+    fileLines.append("\n\n")
     
     lines = codeClass.generateClassDefinitionLines()
     for line in lines:
@@ -242,3 +292,11 @@ def convertToKotlinFile(templateFileJson, className):
         return generateStringFromCodeClass(kotlinClass)
 
     return "invalid json"
+
+
+if __name__ == '__main__':
+    jsonFilePath = "test_template.json"
+    eventsJsonFile = open(jsonFilePath)
+    eventsJson = eventsJsonFile.read()
+    eventsJsonFile.close()
+    print(convertToSwiftFile(eventsJson, "TemplateTest"))
