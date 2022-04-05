@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-from pydoc import classname
+import json
 from pykotlinswift_const_creator import convertToKotlinFile, convertToSwiftFile
 import sys
 
@@ -26,22 +26,42 @@ def exportIOS(eventsJson, iOSProjectEventsFilePath, className):
         classContent= swiftFile
     )
 
+def export(jsonFilePath, iosFilePath, androidFilePath, className, androidClassPackage):
+    eventsJsonFile = open(jsonFilePath)
+    eventsJson = eventsJsonFile.read()
+    eventsJsonFile.close()
 
-def export(args):
-    if (len(args) == 0):
-        raise(Exception("Missing arguments classname, json, iosfile and androidfile using the pattern <param>=<value> (Separating param name and value with an '=' without spaces.)"))        
+    exportIOS(
+        eventsJson= eventsJson,
+        iOSProjectEventsFilePath = iosFilePath,
+        className = className
+    )
 
-    def getArgument(key):
+    exportAndroid(
+        eventsJson= eventsJson,
+        androidProjectEventsFilePath = androidFilePath,
+        className = className
+    )
+
+    # Inserting zoom kotlin class package definition
+    kotlinFile = open(androidFilePath, "r")
+    kotlinFileContent = "%s\n\n%s" % (androidClassPackage, kotlinFile.read())
+    kotlinFile.close()
+    kotlinFile = open(androidFilePath, "w")
+    kotlinFile.write(kotlinFileContent)
+    kotlinFile.close()    
+
+def getArgument(key, args):
         for arg in args:
             keyValue = arg.split("=")
             if (keyValue[0] == key):
                 value = keyValue[1]
                 if (value != None and len(value) > 0):
                     return value
-        return None                        
+        return None
 
-    def getPathArgument(key):
-        value = getArgument(key)
+def getPathArgument(key, args):
+        value = getArgument(key, args)
         
         if (value == None):
             return None
@@ -50,6 +70,16 @@ def export(args):
             return value
         
         raise(Exception("Param %s does not contain a valid file path" % key))
+
+def exportFromArgs(args):
+    if (len(args) == 0):
+        raise(Exception("Missing arguments classname, json, iosfile and androidfile using the pattern <param>=<value> (Separating param name and value with an '=' without spaces.)"))            
+
+    def getArgument(key):
+        return getArgument(key, args)
+
+    def getPathArgument(key):
+        return getPathArgument(key, args)
     
     jsonFilePath = getPathArgument("json")
     if (jsonFilePath == None):
@@ -68,24 +98,41 @@ def export(args):
         print("classname not specified, using 'HelloWorld' instead.")
         className = "HelloWorld"
 
-    eventsJsonFile = open(jsonFilePath)
-    eventsJson = eventsJsonFile.read()
-    eventsJsonFile.close()
+    androidClassPackage = getArgument("androidpackage")    
+    if (androidClassPackage == None):
+        print("androidpackage not specified, which will cause problems to be imported by other classes in the project")
+        androidClassPackage = "// package not specified in the pykotlinswift call"
+    else:
+        androidClassPackage = "package %s" % androidClassPackage
 
-    exportIOS(
-        eventsJson= eventsJson,
-        iOSProjectEventsFilePath = iosFilePath,
-        className = className
+    export(
+        jsonFilePath=jsonFilePath,
+        iosFilePath=iosFilePath,
+        androidFilePath=androidFilePath,
+        className=className,
+        androidClassPackage=androidClassPackage
     )
 
-    exportAndroid(
-        eventsJson= eventsJson,
-        androidProjectEventsFilePath = androidFilePath,
-        className = className
-    )
+def exportFromSettingsFile(settingsFilePath):
+    settingsJsonFile = open(settingsFilePath)
+    settingsObject = json.loads(settingsJsonFile.read())
+    settingsJsonFile.close()
 
+    export(
+        jsonFilePath=settingsObject["_jsonTemplateFilePath"],
+        iosFilePath=settingsObject["_iosOutputFilePath"],
+        androidFilePath=settingsObject["_androidOutputFilePath"],
+        className=settingsObject["_rootClassName"],
+        androidClassPackage=settingsObject["_androidClassPackage"]
+    )
+    
+    
 if __name__ == '__main__':
     args = sys.argv[1:]
-    export(args)
+    jsonSettingsPath = getPathArgument("settings", args)
+    if jsonSettingsPath != None:
+        exportFromSettingsFile(jsonSettingsPath)
+    else:
+        exportFromArgs(args)
     
     

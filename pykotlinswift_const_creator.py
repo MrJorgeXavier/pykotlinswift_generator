@@ -7,20 +7,15 @@ import unicodedata
 def camelCasedString(x: str):
     diactrictsRemoved = u"".join([c for c in unicodedata.normalize('NFKD', x) if not unicodedata.combining(c)])
     specialCharactersRemoved = re.sub(r'[^\w]|_', ' ', diactrictsRemoved)
-    fixedCase = ""
+    camelCase = ""
     for i in range(0, len(specialCharactersRemoved)):        
         char = specialCharactersRemoved[i]        
         if char == " ": continue
-        elif char.isdigit() or char.isupper(): fixedCase += char
-        elif i == 0: fixedCase += char.lower()
-        elif specialCharactersRemoved[i - 1] == " ": fixedCase += char.upper()
-        else: fixedCase += char.lower()
-    return fixedCase
-        
-    # fixedCase = fixedCase[0].lower() + fixedCase[1:]
-    # repeatedUnderscoreRemoved = "".join(filter(lambda s: len(s) > 0, specialCharactersRemoved.split(" ")))
-    # return repeatedUnderscoreRemoved
-
+        elif char.isdigit() or char.isupper(): camelCase += char
+        elif i == 0: camelCase += char.lower()
+        elif specialCharactersRemoved[i - 1] == " ": camelCase += char.upper()
+        else: camelCase += char.lower()
+    return camelCase
 
 ## 
 ## PARSING DICTIONARY TO LANGUAGE INSTRUCTIONS LOGIC:

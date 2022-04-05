@@ -9,6 +9,12 @@ I created this script solely for the specific purpose of generating the same con
 
 # How to use:
 
+### 0: Clone this project and make it your working directory:
+```
+git clone git@github.com:MrJorgeXavier/pykotlinswift_generator.git
+cd pykotlinswift_generator
+```
+
 ### 1: Define a json file specifiying the constants and events:
 ```json
 {    
@@ -33,19 +39,33 @@ I created this script solely for the specific purpose of generating the same con
 }
 ```
 
-### 2: Define an empty Kotlin file:
+### 2: Define an empty Kotlin file in your Android project:
 ```kotlin
 /// Empty kotlin file to be the output target
 ```
 
-### 3: Define an empty Swift file:
-```kotlin
+### 3: Define an empty Swift file in your iOS Project:
+```swift
 /// Empty swift file to be the output target
 ```
 
 ### 4: Invoke the following script passing the paths to the created files, and the desired output class name as arguments to the script:
+- Option 1: Pass all arguments in the script call:
 ```shell
-python3 pykotlinswift.py json=<your-json-file-path> iosfile=<your-swift-file-path> androidfile=<your-kotlin-file-path> classname=<your-class-name>
+python3 pykotlinswift.py json=<your-json-file-path> iosfile=<your-swift-file-path> androidfile=<your-kotlin-file-path> androidpackage=<your-kotlin-class-package> classname=<your-class-name>
+```
+- Option 2: Define and pass a settings json file with the following keys in the script call:
+```json
+{
+    "_rootClassName": "<swift and kotlin class name to generate the main class that will contain all methods properties and subclasses>",    
+    "_jsonTemplateFilePath": "<json constants and events definition as in the first step>",
+    "_androidClassPackage": "<the package that will be specified at the top of the kotlin file (important to make the android project recognize the kotlin class)>",
+    "_androidOutputFilePath": "<the path of the kotlin file inside the android project>",    
+    "_iosOutputFilePath": "<the path of the swift file inside the ios project>"    
+}
+```
+```shell
+python3 pykotlinswift.py settings=<your-json-settings-file-path>
 ```
 
 ### After following the above steps, the example json will generate the following classes:
@@ -166,9 +186,12 @@ object SampleClass {
 
 ## Current Limitations:
 - Arrays are not supported
+- The output files must be created by the user, since they are indexed by the IDE.
 - The special characters `{`, `}` and `%` are used to define dynamic params, and can not be used for any other purpose.
 - The only dynamic mask values supported are `%f`, `%d` and `%s`.
 
 ### Future features:
 - Visibility modifiers annotations
+- Supporting arrays
+- Improvements in the script call to make it easier to use
 - Code refactoring to be human readable
