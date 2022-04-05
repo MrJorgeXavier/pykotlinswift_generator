@@ -1,7 +1,11 @@
-## Kotlin and Swift constants generator
+# Kotlin/Swift constants and events generator
 ------
 I created this script solely for the specific purpose of generating the same constants to swift and kotlin from a json file. I found it useful to standardize my mobile applications analytics events. Probably no one will use this besides me, but I will keep public here anyways.<br>
 
+## Features
+- Generate constants and event methods to kotlin and swift from a json file
+- Automatic normalization of values (lowercasing, removing diacritics, replacing special characters with underscore, removing repeated underscores) 
+- Generation of methods with normalized camelCase param names (while keeping the event param name with the original value)
 
 # How to use:
 

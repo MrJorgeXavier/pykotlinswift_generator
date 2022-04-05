@@ -2,6 +2,25 @@
 
 import json
 import re
+import unicodedata
+
+def camelCasedString(x: str):
+    diactrictsRemoved = u"".join([c for c in unicodedata.normalize('NFKD', x) if not unicodedata.combining(c)])
+    specialCharactersRemoved = re.sub(r'[^\w]|_', ' ', diactrictsRemoved)
+    fixedCase = ""
+    for i in range(0, len(specialCharactersRemoved)):        
+        char = specialCharactersRemoved[i]        
+        if char == " ": continue
+        elif char.isdigit() or char.isupper(): fixedCase += char
+        elif i == 0: fixedCase += char.lower()
+        elif specialCharactersRemoved[i - 1] == " ": fixedCase += char.upper()
+        else: fixedCase += char.lower()
+    return fixedCase
+        
+    # fixedCase = fixedCase[0].lower() + fixedCase[1:]
+    # repeatedUnderscoreRemoved = "".join(filter(lambda s: len(s) > 0, specialCharactersRemoved.split(" ")))
+    # return repeatedUnderscoreRemoved
+
 
 ## 
 ## PARSING DICTIONARY TO LANGUAGE INSTRUCTIONS LOGIC:
@@ -68,6 +87,7 @@ class CodeClass:
                 paramName = ""
                 if (paramHasName):
                     paramName = re.findall("\{(.*)\}", splitValue)[0]
+                    paramName = camelCasedString(paramName)
                 else:
                     paramName = "a%d" % paramCount                
                 
@@ -102,7 +122,7 @@ class CodeClass:
 
             if (isinstance(value, str)):
                 if ("%" in value):
-                    params += "\"%s\" = %s" % (valueKey, valueKey)
+                    params += "\"%s\" = %s" % (valueKey, camelCasedString(valueKey))
                 else:
                     params += "\"%s\" = \"%s\"" % (valueKey, value)
             elif (isinstance(value, float)):
@@ -151,6 +171,8 @@ class CodeClass:
             # Write arguments
             if (len(methodArguments) > 0):
                 methodArguments = "%s, " % (methodArguments)
+
+            paramName = camelCasedString(paramName)
 
             methodArguments = "%s%s" % (methodArguments, self.createParamName(paramName, paramType, True))                                                
 
