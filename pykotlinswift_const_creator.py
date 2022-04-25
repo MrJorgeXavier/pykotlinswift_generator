@@ -38,6 +38,7 @@ class CodeClass:
         self.methodProperties = []
         self.attributeLines = []
         self.defaultParameters = {}
+        self.innerEnums = []
 
     def createInnerClass(self):
         return None
@@ -60,6 +61,8 @@ class CodeClass:
     def createEventClassInstance(self, name, value):
         return None
 
+    def createEnumClassDefinition(self, name, caseParams):
+        return None
 
     def createMethodDefinition(self, name, value):
         paramCount = 1
@@ -124,7 +127,10 @@ class CodeClass:
 
             if (isinstance(value, str)):
                 if ("%" in value):
-                    params += "\"%s\" = %s" % (valueKey, camelCasedString(valueKey))
+                    if ("%{" in value):
+                        params += "\"%s\" = %s.pyRawValue()" % (valueKey, camelCasedString(valueKey))
+                    else:
+                        params += "\"%s\" = %s" % (valueKey, camelCasedString(valueKey))
                 else:
                     params += "\"%s\" = \"%s\"" % (valueKey, value)
             elif (isinstance(value, float)):
@@ -163,8 +169,10 @@ class CodeClass:
                         paramType = "Double"
                     elif ("s" in typeChar):
                         paramType = "String"
+                    elif ("%{" in typeChar):
+                        paramType = paramValue[2:(len(paramValue) - 1)]
                     else:
-                        raiseException("Unknown param type")
+                        raiseException("Unknown param type for param %s at method %s" % (paramName, methodName))
                 else:
                     continue # fixed value
             else:
@@ -204,7 +212,11 @@ class CodeClass:
                 raiseException("Arrays are not supported! Use only strings, floats, ints and objects.")
             elif (isinstance(value, object)):
                 if (key == "_defaultParams"):
-                    self.defaultParameters = value                    
+                    self.defaultParameters = value
+                elif (key == "_enums"):
+                    for enumClass in value:
+                        enum = self.createEnumClassDefinition(enumClass, value[enumClass])
+                        self.innerEnums.append(enum)
                 elif "_name" in value:
                     eventName = value["_name"]
                     eventParams = value["_params"]
@@ -235,6 +247,9 @@ class CodeClass:
 
         writeLine(self.createClassDefinition(), self.indentationLevel)
         
+        for enum in self.innerEnums:
+            writeLine(enum, self.indentationLevel + 1)
+
         for attributeLine in self.attributeLines:
             writeLine(attributeLine, self.indentationLevel + 1)
 
@@ -295,12 +310,46 @@ class KotlinClass(CodeClass):
             "}"
         ]
 
+    def createEnumClassDefinition(self, name, caseParams):
+        indent = self.indentation(self.indentationLevel + 1)
+        enumHeader = """
+%sinterface %s: PyRawRepresentable {
+%s    companion object {
+%s        private data class EnumData(val value: Any): %s {  override fun pyRawValue(): Any = this.value; }
+""" % (indent, name, indent, indent, name)
+        enumCases = ""
+        for case in caseParams:            
+            value = caseParams[case]
+            if (isinstance(value, str)):
+                if ("%" in value):
+                    if (value.count("%") > 1):
+                        raiseException("Enums cannot have more than one parameter, but it has at case %s.%s with value %s" % (name, case, value))
+                    methodProps = super().createMethodDefinition(case, value)
+                    paramDefinition = methodProps[1]
+                    argument = methodProps[2] 
+                    argument = argument[2:len(argument) - 1] # trimming interpolation characters
+                    enumCases += "\n%sfun %s(%s): %s = EnumData(%s)" % (indent + self.indentation(2), case, paramDefinition, name, argument)
+                else:
+                    enumCases += "\n%sval %s: %s = EnumData(\"%s\")" % (indent + self.indentation(2), case, name, value)    
+            else:
+                enumCases += "\n%sval %s: %s = EnumData(%s)" % (indent + self.indentation(2), case, name, value)
+        enumFooter = """
+%s    }
+%s}        
+""" % (indent, indent)
+        return enumHeader + enumCases + enumFooter
+
+
     def createEventClassDefinition(self):
         return """
 import java.text.Normalizer
 
 private val pyDiactricsRegex = "\\\\p{Mn}+".toRegex()
 private val pyNormalizationRegex = "[^\\\\w]".toRegex()
+
+interface PyRawRepresentable {
+    fun pyRawValue(): Any
+}
 
 fun String.pyNormalized(): String {
     return Normalizer.normalize(this.lowercase(), Normalizer.Form.NFD)
@@ -381,6 +430,10 @@ class SwiftClass(CodeClass):
     def createEventClassDefinition(self):
         return  """
 import Foundation
+
+protocol PyRawRepresentable {
+    func pyRawValue() -> Any
+}
 
 extension String {
     func pyNormalized() -> String {
