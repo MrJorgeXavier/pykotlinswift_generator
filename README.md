@@ -52,11 +52,12 @@ cd pykotlinswift_generator
 ### 4: Invoke the following script passing the paths to the created files, and the desired output class name as arguments to the script:
 - Option 1: Pass all arguments in the script call:
 ```shell
-python3 pykotlinswift.py json=<your-json-file-path> iosfile=<your-swift-file-path> androidfile=<your-kotlin-file-path> androidpackage=<your-kotlin-class-package> classname=<your-class-name>
+python3 pykotlinswift.py json=<your-json-file-path> iosfile=<your-swift-file-path> androidfile=<your-kotlin-file-path> androidpackage=<your-kotlin-class-package> classname=<your-class-name> version=<file-version-to-append-on-file>
 ```
 - Option 2: Define and pass a settings json file with the following keys in the script call:
 ```json
 {
+    "_version": "<file-version to append on file header commentary>",
     "_rootClassName": "<swift and kotlin class name to generate the main class that will contain all methods properties and subclasses>",    
     "_jsonTemplateFilePath": "<json constants and events definition as in the first step>",
     "_androidClassPackage": "<the package that will be specified at the top of the kotlin file (important to make the android project recognize the kotlin class)>",

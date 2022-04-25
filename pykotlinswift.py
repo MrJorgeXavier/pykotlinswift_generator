@@ -2,7 +2,7 @@
 
 import os
 import json
-from pykotlinswift_const_creator import convertToKotlinFile, convertToSwiftFile
+from pykotlinswift_const_creator import convertToKotlinFile, convertToSwiftFile, raiseException
 import sys
 
 
@@ -10,23 +10,23 @@ def exportFile(eventsFilePath, classContent):
     open(eventsFilePath, "w").write(classContent)
 
 
-def exportAndroid(eventsJson, androidProjectEventsFilePath, className):    
-    kotlinFile = convertToKotlinFile(eventsJson, className) 
+def exportAndroid(eventsJson, androidProjectEventsFilePath, className, version):    
+    kotlinFile = convertToKotlinFile(eventsJson, className, version) 
 
     exportFile(
         eventsFilePath= androidProjectEventsFilePath,
         classContent= kotlinFile
     )
 
-def exportIOS(eventsJson, iOSProjectEventsFilePath, className):            
-    swiftFile = convertToSwiftFile(eventsJson, className)
+def exportIOS(eventsJson, iOSProjectEventsFilePath, className, version):            
+    swiftFile = convertToSwiftFile(eventsJson, className, version)
 
     exportFile(
         eventsFilePath= iOSProjectEventsFilePath,
         classContent= swiftFile
     )
 
-def export(jsonFilePath, iosFilePath, androidFilePath, className, androidClassPackage):
+def export(jsonFilePath, iosFilePath, androidFilePath, className, androidClassPackage, version):
     eventsJsonFile = open(jsonFilePath)
     eventsJson = eventsJsonFile.read()
     eventsJsonFile.close()
@@ -34,13 +34,15 @@ def export(jsonFilePath, iosFilePath, androidFilePath, className, androidClassPa
     exportIOS(
         eventsJson= eventsJson,
         iOSProjectEventsFilePath = iosFilePath,
-        className = className
+        className = className,
+        version = version
     )
 
     exportAndroid(
         eventsJson= eventsJson,
         androidProjectEventsFilePath = androidFilePath,
-        className = className
+        className = className,
+        version = version
     )
 
     # Inserting zoom kotlin class package definition
@@ -69,11 +71,11 @@ def getPathArgument(key, args):
         if (os.path.exists(value)):
             return value
         
-        raise(Exception("Param %s does not contain a valid file path" % key))
+        raiseException("Param %s does not contain a valid file path" % key)
 
 def exportFromArgs(args):
     if (len(args) == 0):
-        raise(Exception("Missing arguments classname, json, iosfile and androidfile using the pattern <param>=<value> (Separating param name and value with an '=' without spaces.)"))            
+        raiseException("Missing arguments classname, json, iosfile and androidfile using the pattern <param>=<value> (Separating param name and value with an '=' without spaces.)")
 
     def getArgument(key):
         return getArgument(key, args)
@@ -83,15 +85,15 @@ def exportFromArgs(args):
     
     jsonFilePath = getPathArgument("json")
     if (jsonFilePath == None):
-        raise(Exception("Missing param 'json', please inform the json file containing the events to generate the code."))
+        raiseException("Missing param 'json', please inform the json file containing the events to generate the code.")
 
     iosFilePath = getPathArgument("iosfile")
     if (iosFilePath == None):
-        raise(Exception("Missing param 'iosfile', please inform the swift file to output the generated code."))
+        raiseException("Missing param 'iosfile', please inform the swift file to output the generated code.")
 
     androidFilePath = getPathArgument("androidfile")
     if (androidFilePath == None):
-        raise(Exception("Missing param 'androidfile', please inform the kotlin file to output the generated code."))
+        raiseException("Missing param 'androidfile', please inform the kotlin file to output the generated code.")
 
     className = getArgument("classname")
     if (className == None):
@@ -110,7 +112,8 @@ def exportFromArgs(args):
         iosFilePath=iosFilePath,
         androidFilePath=androidFilePath,
         className=className,
-        androidClassPackage=androidClassPackage
+        androidClassPackage=androidClassPackage,
+        version=getArgument("version")
     )
 
 def exportFromSettingsFile(settingsFilePath):
@@ -123,7 +126,8 @@ def exportFromSettingsFile(settingsFilePath):
         iosFilePath=settingsObject["_iosOutputFilePath"],
         androidFilePath=settingsObject["_androidOutputFilePath"],
         className=settingsObject["_rootClassName"],
-        androidClassPackage=settingsObject["_androidClassPackage"]
+        androidClassPackage=settingsObject["_androidClassPackage"],
+        version=settingsObject["_version"]
     )
     
     
