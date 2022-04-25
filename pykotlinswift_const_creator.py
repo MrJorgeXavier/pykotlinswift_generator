@@ -445,11 +445,11 @@ class SwiftClass(CodeClass):
                     paramDefinition = methodProps[1]
                     argument = methodProps[2] 
                     argument = argument[2:len(argument) - 1] # trimming interpolation characters
-                    enumCases += "\n%sstatic func %s(%s) -> %s { return %s(%s) }" % (indent + self.indentation(1), case, paramDefinition, name, name, argument)
+                    enumCases += "\n%spublic static func %s(%s) -> %s { return %s(%s) }" % (indent + self.indentation(1), case, paramDefinition, name, name, argument)
                 else:
-                    enumCases += "\n%sstatic let %s = %s(\"%s\")" % (indent + self.indentation(1), case, name, value)    
+                    enumCases += "\n%spublic static let %s = %s(\"%s\")" % (indent + self.indentation(1), case, name, value)    
             else:
-                enumCases += "\n%sstatic let %s = %s(%s)" % (indent + self.indentation(1), case, name, value)
+                enumCases += "\n%spublic static let %s = %s(%s)" % (indent + self.indentation(1), case, name, value)
         enumFooter = """
 %s}        
 """ % (indent)
