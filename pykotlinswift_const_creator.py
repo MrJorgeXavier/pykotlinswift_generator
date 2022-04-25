@@ -128,7 +128,7 @@ class CodeClass:
             if (isinstance(value, str)):
                 if ("%" in value):
                     if ("%{" in value):
-                        params += "\"%s\" = %s.pyRawValue()" % (valueKey, camelCasedString(valueKey))
+                        params += "\"%s\" = %s.pyRawValue" % (valueKey, camelCasedString(valueKey))
                     else:
                         params += "\"%s\" = %s" % (valueKey, camelCasedString(valueKey))
                 else:
@@ -315,7 +315,7 @@ class KotlinClass(CodeClass):
         enumHeader = """
 %sinterface %s: PyRawRepresentable {
 %s    companion object {
-%s        private data class EnumData(val value: Any): %s {  override fun pyRawValue(): Any = this.value; }
+%s        private data class EnumData(override val pyRawValue: Any): %s
 """ % (indent, name, indent, indent, name)
         enumCases = ""
         for case in caseParams:            
@@ -348,7 +348,7 @@ private val pyDiactricsRegex = "\\\\p{Mn}+".toRegex()
 private val pyNormalizationRegex = "[^\\\\w]".toRegex()
 
 interface PyRawRepresentable {
-    fun pyRawValue(): Any
+    val pyRawValue: Any
 }
 
 fun String.pyNormalized(): String {
@@ -427,12 +427,41 @@ class SwiftClass(CodeClass):
             "}"
         ]
 
+    def createEnumClassDefinition(self, name, caseParams):
+        indent = self.indentation(self.indentationLevel + 1)
+        enumHeader = """
+%spublic struct %s: PyRawRepresentable {
+%s    let pyRawValue: Any
+%s    private init(_ value: Any) { self.pyRawValue = value }
+""" % (indent, name, indent, indent)
+        enumCases = ""
+        for case in caseParams:            
+            value = caseParams[case]
+            if (isinstance(value, str)):
+                if ("%" in value):
+                    if (value.count("%") > 1):
+                        raiseException("Enums cannot have more than one parameter, but it has at case %s.%s with value %s" % (name, case, value))
+                    methodProps = super().createMethodDefinition(case, value)
+                    paramDefinition = methodProps[1]
+                    argument = methodProps[2] 
+                    argument = argument[2:len(argument) - 1] # trimming interpolation characters
+                    enumCases += "\n%sstatic func %s(%s) -> %s { return %s(%s) }" % (indent + self.indentation(1), case, paramDefinition, name, name, argument)
+                else:
+                    enumCases += "\n%sstatic let %s = %s(\"%s\")" % (indent + self.indentation(1), case, name, value)    
+            else:
+                enumCases += "\n%sstatic let %s = %s(%s)" % (indent + self.indentation(1), case, name, value)
+        enumFooter = """
+%s}        
+""" % (indent)
+        return enumHeader + enumCases + enumFooter
+
+
     def createEventClassDefinition(self):
         return  """
 import Foundation
 
 protocol PyRawRepresentable {
-    func pyRawValue() -> Any
+    var pyRawValue: Any { get }
 }
 
 extension String {
