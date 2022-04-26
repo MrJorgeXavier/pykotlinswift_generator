@@ -64,6 +64,33 @@ class CodeClass:
     def createEnumClassDefinition(self, name, caseParams):
         return None
 
+    def getOptionalitySuffix(self, paramValue):
+        suffix = ""
+        if (paramValue[len(paramValue) - 1] == "?"):            
+            suffix = "?"
+        return suffix
+
+    def parseParamType(self, paramValue):
+        if ("%" in paramValue):                
+            typeChar = re.findall("%.", paramValue)[0]
+            suffix = self.getOptionalitySuffix(paramValue)
+            
+            if (len(suffix) > 0 ):
+                paramValue = paramValue[0:(len(paramValue) - 1)]
+
+            if ("d" in typeChar):
+                return "Int%s" % suffix
+            elif ("f" in typeChar):
+                return "Double%s" % suffix
+            elif ("s" in typeChar):
+                return "String%s" % suffix
+            elif ("%{" in typeChar):
+                return "%s%s" % (paramValue[2:(len(paramValue) - 1)], suffix)
+            else:
+                raiseException("Unknown param type for param %s inside class %s" % (paramValue, self.name))
+        else:
+            return None
+
     def createMethodDefinition(self, name, value):
         paramCount = 1
         methodArguments = ""
@@ -75,19 +102,9 @@ class CodeClass:
             if (splitValue == None or splitValue == ''): 
                 continue
             
-            if ("%" in splitValue):
-                # Define type of param
+            if ("%" in splitValue):                
                 typeChar = re.findall("%.", splitValue)[0]
-                
-                paramType = ""
-                if ("d" in typeChar):
-                    paramType = "Int"
-                elif ("f" in typeChar):
-                    paramType = "Double"
-                elif ("s" in typeChar):
-                    paramType = "String"
-                elif ("%{" in splitValue):
-                    paramType = splitValue[2:len(splitValue) - 1]
+                paramType = self.parseParamType(splitValue)                
 
                 # Define name of param
                 paramHasName = "{" in splitValue
@@ -108,7 +125,8 @@ class CodeClass:
 
                 # Write return value
                 if ("%{" in splitValue):
-                    paramName = "%s.pyRawValue" % paramName
+                    suffix = self.getOptionalitySuffix(splitValue)
+                    paramName = "%s%s.pyRawValue" % (paramName, suffix)
                                         
                 if (paramHasName):
                     methodReturnValue = "%s%s" % (methodReturnValue, self.createStringInterpolatedValue(paramName))
@@ -133,7 +151,8 @@ class CodeClass:
             if (isinstance(value, str)):
                 if ("%" in value):
                     if ("%{" in value):
-                        params += "\"%s\" = %s.pyRawValue" % (valueKey, camelCasedString(valueKey))
+                        suffix = self.getOptionalitySuffix(value)
+                        params += "\"%s\" = %s%s.pyRawValue" % (valueKey, camelCasedString(valueKey), suffix)
                     else:
                         params += "\"%s\" = %s" % (valueKey, camelCasedString(valueKey))
                 else:
@@ -145,7 +164,6 @@ class CodeClass:
             elif (isinstance(value, list)):
                 raiseException("Arrays are not supported! Use only strings, floats, ints and objects.")
         return params
-
 
     def createEventMethodDefinition(self, methodName, eventName, eventParams, excludeParams):
         methodArguments = ""
@@ -166,18 +184,7 @@ class CodeClass:
             # Define type of param
             if (isinstance(paramValue, str)):
                 if ("%" in paramValue):                
-                    typeChar = re.findall("%.", paramValue)[0]
-                
-                    if ("d" in typeChar):
-                        paramType = "Int"
-                    elif ("f" in typeChar):
-                        paramType = "Double"
-                    elif ("s" in typeChar):
-                        paramType = "String"
-                    elif ("%{" in typeChar):
-                        paramType = paramValue[2:(len(paramValue) - 1)]
-                    else:
-                        raiseException("Unknown param type for param %s at method %s" % (paramName, methodName))
+                   paramType = self.parseParamType(paramValue)
                 else:
                     continue # fixed value
             else:

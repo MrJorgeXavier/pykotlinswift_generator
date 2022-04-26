@@ -3,7 +3,7 @@
 I created this script solely for the specific purpose of generating the same constants to swift and kotlin from a json file. I found it useful to standardize my mobile applications analytics events. Probably no one will use this besides me, but I will keep public here anyways.<br>
 
 ## Features
-- Generate enums, constants and event methods to kotlin and swift from a json file
+- Generate enums, constants, optional params, and event methods to kotlin and swift from a json file
 - Automatic normalization of values (lowercasing, removing diacritics, replacing special characters with underscore, removing repeated underscores) 
 - Generation of methods with normalized camelCase param names (while keeping the event param name with the original value)
 
@@ -31,8 +31,9 @@ cd pykotlinswift_generator
     "eventMethodName": {  // Method that returns an EventData object
         "_name": "event-name", // The name property of the EventData object
         "_params": { // The params property of the EventData object
-            "param1" : "%s", // Dynamic params are added to the method signature
-            "param2" : 42 // Fixed params are defined in the EventData construction
+            "param1" : "%s", // Dynamic params are added to the method signature            
+            "param2" : 42, // Fixed params are defined in the EventData construction
+            "param3" : "%d{paramName}?", // Dynamic params values that ends with "?" are defined as optional params in the method signature.
         },
         "_excludeParams": ["defaultParam2"] // Optional. Exclude params inherited from the _defaultParams in this group.
     },
@@ -202,3 +203,4 @@ object SampleClass {
 - Supporting arrays
 - Improvements in the script call to make it easier to use
 - Code refactoring to be human readable
+- README.md better written
