@@ -487,8 +487,8 @@ extension Dictionary where Key == String, Value == Any {
 }
 
 public struct EventData {
-    let name: String
-    let params: [String: Any]
+    public let name: String
+    public let params: [String: Any]
     
     init(name: String, params: [String: Any]) {
         self.name = name.pyNormalized()
