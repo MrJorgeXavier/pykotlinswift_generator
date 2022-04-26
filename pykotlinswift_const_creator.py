@@ -365,20 +365,21 @@ fun String.pyNormalized(): String {
         .joinToString(separator = "_")
 }
 
-fun Map<String, Any>.pyNormalized(): Map<String, Any> {
+fun Map<String, Any?>.pyNormalized(): Map<String, Any> {
     var map = HashMap<String, Any>()
     for ((key, value) in this) {
-        if (value is String) {
-            map.put(key.pyNormalized(), value.pyNormalized())
+        val v = value ?: continue
+        if (v is String) {
+            map.put(key.pyNormalized(), v.pyNormalized())
         }
         else {
-            map.put(key.pyNormalized(), value)
+            map.put(key.pyNormalized(), v)
         }
     }
     return map
 }
 
-data class EventData(private val rawName: String, private val rawParams: Map<String, Any>) {
+data class EventData(private val rawName: String, private val rawParams: Map<String, Any?>) {
     val name = this.rawName.pyNormalized()
     val params = this.rawParams.pyNormalized()
     
@@ -481,8 +482,8 @@ extension String {
     }
 }
 
-extension Dictionary where Key == String, Value == Any {
-    func pyNormalized() -> [Key: Value] {
+extension Dictionary where Key == String, Value == Any? {
+    func pyNormalized() -> [String: Any] {
         return self.reduce([:], { result, keyValue in
             var r = result
             r[keyValue.key.pyNormalized()] = ((keyValue.value as? String)?.pyNormalized()) ?? keyValue.value
@@ -495,7 +496,7 @@ public struct EventData {
     public let name: String
     public let params: [String: Any]
     
-    init(name: String, params: [String: Any]) {
+    init(name: String, params: [String: Any?]) {
         self.name = name.pyNormalized()
         self.params = params.pyNormalized()
     }
