@@ -193,14 +193,18 @@ object SampleClass {
 ```
 
 ## Current Limitations:
-- Arrays are not supported
+- Arrays and booleans are not supported
 - The output files must be created by the user, since they are indexed by the IDE.
 - The special characters `{`, `}` and `%` are used to define dynamic params, and can not be used for any other purpose.
 - The only dynamic mask values supported are `%f`, `%d` and `%s`.
 
 ### Future features:
 - Visibility modifiers annotations
-- Supporting arrays
+- Supporting arrays and booleans
+- Adding custom formatting protocols
 - Improvements in the script call to make it easier to use
 - Code refactoring to be human readable
+- Better definition of method signature to decouple it from param key/values
+- Adding template project which has everything configured, including a html dashboad to control the events.
+- Improving the events json structure to be more easily mantained
 - README.md better written
