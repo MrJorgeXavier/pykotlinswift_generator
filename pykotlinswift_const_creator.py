@@ -86,6 +86,8 @@ class CodeClass:
                     paramType = "Double"
                 elif ("s" in typeChar):
                     paramType = "String"
+                elif ("%{" in splitValue):
+                    paramType = splitValue[2:len(splitValue) - 1]
 
                 # Define name of param
                 paramHasName = "{" in splitValue
@@ -94,8 +96,8 @@ class CodeClass:
                     paramName = re.findall("\{(.*)\}", splitValue)[0]
                     paramName = camelCasedString(paramName)
                 else:
-                    paramName = "a%d" % paramCount                
-                
+                    paramName = "a%d" % paramCount                                
+
                 paramCount += 1
                 
                 # Write arguments
@@ -105,6 +107,9 @@ class CodeClass:
                 methodArguments = "%s%s" % (methodArguments, self.createParamName(paramName, paramType, paramHasName))
 
                 # Write return value
+                if ("%{" in splitValue):
+                    paramName = "%s.pyRawValue" % paramName
+                                        
                 if (paramHasName):
                     methodReturnValue = "%s%s" % (methodReturnValue, self.createStringInterpolatedValue(paramName))
                 else:
