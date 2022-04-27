@@ -208,3 +208,6 @@ object SampleClass {
 - Adding template project which has everything configured, including a html dashboad to control the events.
 - Improving the events json structure to be more easily mantained
 - README.md better written
+- Support to code documentation
+- Template project with everything working as intended
+- Interpolated arguments on event params, just like on methods
