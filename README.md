@@ -211,3 +211,7 @@ object SampleClass {
 - Support to code documentation
 - Template project with everything working as intended
 - Interpolated arguments on event params, just like on methods
+- Improve enums to expose its content value with correct typing
+- Script to check if native projects contains all events implemented somewhere in the code (maybe useless?)
+- Custom structures that exposes dictionaries of data
+- Context management: useful to apply specific custom parameters and manipulations to all events originated from the context.
